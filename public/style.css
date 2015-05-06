@@ -1,0 +1,10 @@
+ul {
+  list-style: none;
+  word-wrap: break-word;
+}
+
+.panel-body
+{
+	height: 500px;
+	overflow-y: scroll;
+}
