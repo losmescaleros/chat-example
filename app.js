@@ -1,3 +1,4 @@
+/// <reference path="typings/node/node.d.ts"/>
 var express = require('express');
 var app = express();
 var http = require('http').Server(app);
@@ -9,7 +10,7 @@ var userCount = 0;
 var server_port = process.env.OPENSHIFT_NODEJS_PORT || 8080;
 var server_ip_address = process.env.OPENSHIFT_NODEJS_IP || '127.0.0.1';
 
-app.use(express.static(__dirname + '/public'))
+app.use(express.static(__dirname + '/public'));
 
 app.get('/', function(req, res){
 	res.sendFile(__dirname + '/index.html');
@@ -59,5 +60,5 @@ io.on('connection', function(socket){
 });
 
 http.listen(server_port, server_ip_address, function(){
-	console.log("Server listening on *:3000");
+	console.log("Server listening on *:" + server_port);
 });
