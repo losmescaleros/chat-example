@@ -21,23 +21,33 @@ io.on('connection', function(socket){
 	var addedUser = false;
 	// Handle an 'add user' event
 	socket.on('add user', function(msg){
-		socket.username = msg.username;
-		usernames[msg.username] = socket.id;
-		userCount++;
-		// Tell the user they have successfully logged in
-		socket.emit('login', {
-			"userCount" : userCount,
-			"usernames": usernames
-		});
-		// Broadcast that a user has joined
-		socket.broadcast.emit('user joined', {
-			"username": msg.username,
-			"userCount": userCount,
-			"usernames": usernames
-		});
-		addedUser = true;
-		console.log('User "' + msg.username + '" connected. Current user count: ' + 
-			userCount);
+		var usernameErr = isValidUsername(msg.username);
+
+		if(usernames[msg.username]){
+			emitError(socket, 'login error', 'A user with this name already exists');
+		} 
+		else if(usernameErr.length > 0){
+			emitError(socket, 'login error', 'Invalid username: ' + usernameErr);	
+		}
+		else {
+			socket.username = msg.username;
+			usernames[msg.username] = socket.id;
+			userCount++;
+			// Tell the user they have successfully logged in
+			socket.emit('login', {
+				"userCount" : userCount,
+				"usernames": usernames
+			});
+			// Broadcast that a user has joined
+			socket.broadcast.emit('user joined', {
+				"username": msg.username,
+				"userCount": userCount,
+				"usernames": usernames
+			});
+			addedUser = true;
+			console.log('User "' + msg.username + '" connected. Current user count: ' + 
+				userCount);
+		}		
 	});
 	// Handle a 'typing' event
 	socket.on('user typing', function(msg){
@@ -89,3 +99,29 @@ io.on('connection', function(socket){
 http.listen(server_port, server_ip_address, function(){
 	console.log("Server listening on *:" + server_port);
 });
+
+var broadcastError = function(socket, errMsg){
+	socket.broadcast.emit('error', {
+		"message": errMsg
+	});
+};
+
+var emitError = function(socket, errType, errMsg){
+	socket.emit(errType, {
+		"message": errMsg
+	});
+};
+
+var isValidUsername = function(username){
+	var error = "";
+	var illegalChars = /\W/;
+	
+	if(illegalChars.test(username)){
+		error = "Username must contain only aplhanumeric characters";
+	}
+	else if(username.length < 4 || username.length > 32){
+		error = "Username must be between 4 and 32 characters in length";
+	}
+	
+	return error;
+};

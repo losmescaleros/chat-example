@@ -14,6 +14,7 @@ var chat = chat || {};
   var config = {
     chatPage: ".page-chat",
     loginPage: ".page-login",
+    loginError: ".login-error",
     messages: ".messages",
     userCount: ".page-chat .userCount",
     userTyping: ".page-chat .userTyping",
@@ -24,7 +25,7 @@ var chat = chat || {};
   };
   
   var $chatPage, $loginPage, $messages, $userCount, $loginForm, $msgForm, $userTyping,
-  $msgContainer, $connectedUsers;
+  $msgContainer, $connectedUsers, $loginError;
       
   chat.init = function(cfg){
     $.extend(config, cfg);
@@ -38,16 +39,15 @@ var chat = chat || {};
     $userTyping = $(config.userTyping);
     $msgContainer = $(config.msgContainer);
     $connectedUsers = $(config.connectedUsers);
+    $loginError = $(config.loginError);
     setUpForms();
   };   
   
   var setUpForms = function(){
     $loginForm.submit(function(){
       username = $(this).find('input.username').first().val().trim();
-      if(username){
-        $loginPage.fadeOut();
-        $chatPage.show();
-        $loginPage.off('click');
+      $loginError.text('');
+      if(username){       
         socket.emit('add user', {
           "username": username
         });
@@ -143,13 +143,16 @@ var chat = chat || {};
     $msgContainer.scrollTop($msgContainer.height());
   };
   
+  var showLoginError = function(message){
+    $loginError.text(message);
+  };
+  
   var updateUserTyping = function(){
     $('.typing').hide();
      
     $.each(usersTyping, function(key, value){
       $('#' + key).find('.typing').show();              
-    });
-    
+    });    
   };
   
   var updateConnectedUsers = function(usernames){
@@ -163,6 +166,9 @@ var chat = chat || {};
   
   socket.on('login', function(data){
     connected = true;
+    $loginPage.fadeOut();
+    $chatPage.show();
+    $loginPage.off('click');
     showSystemMessage("Oh hey, welcome to Just Chattin'");
     updateUserCount(data.userCount);
     updateConnectedUsers(data.usernames);
@@ -196,6 +202,10 @@ var chat = chat || {};
   socket.on('user stopped typing', function(data){
     delete usersTyping[data.username];
     updateUserTyping();
+  });
+  
+  socket.on('login error', function(data){
+    showLoginError(data.message);
   });
   
 })(jQuery, window, chat);
