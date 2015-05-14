@@ -10,7 +10,6 @@ var chat = chat || {};
   var typingTimer;
   var typingInterval = 4000;
   var usersTyping = {};
-  var lastTypingTime;
   
   var config = {
     chatPage: ".page-chat",
@@ -59,14 +58,36 @@ var chat = chat || {};
     $msgForm.submit(function(){
       var $msgInput = $(this).find('input.msg').first();
       var msg = $msgInput.val();
-      if(msg != ''){
-        showMyMessage(msg);
-        socket.emit('chat message', 
-          {
-            "message": msg
-          });
+      var tokens = msg.split(' ');
+      switch(tokens[0]){
+        case "/w":
+          if(tokens[1] && tokens[2]){
+            var message = msg.substring(tokens[0].length + tokens[1].length + 2);
+            showPrivateMessage("Me to " + tokens[1], message);
+            socket.emit('private message', {
+              "username": username,
+              "to": tokens[1],
+              "message": message
+            });
+          }
+          break;
+        default:
+          if(msg != ''){
+            showMyMessage(msg);
+            if(isTyping){
+              isTyping = false;
+              socket.emit('user stopped typing', {
+                username: username
+              });
+            }
+            socket.emit('chat message', 
+            {
+              "message": msg
+            });
+          }
+          break;
       }
-      
+           
       $msgInput.val('');
       return false;
     });
@@ -115,6 +136,13 @@ var chat = chat || {};
     $msgContainer.scrollTop($msgContainer.height());
   }; 
   
+  var showPrivateMessage = function(username, message){
+    $messages.append($('<li>')
+      .addClass('text-warning')
+      .text(username + ": " + message));
+    $msgContainer.scrollTop($msgContainer.height());
+  };
+  
   var updateUserTyping = function(){
     $('.typing').hide();
      
@@ -142,6 +170,10 @@ var chat = chat || {};
   
   socket.on('chat message', function(data){
     showMessage(data.username, data.message);
+  });
+  
+  socket.on('private message', function(data){
+    showPrivateMessage(data.username, data.message);
   });
   
   socket.on('user joined', function(data){    

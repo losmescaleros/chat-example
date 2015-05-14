@@ -1,4 +1,5 @@
 /// <reference path="typings/node/node.d.ts"/>
+
 var express = require('express');
 var app = express();
 var http = require('http').Server(app);
@@ -21,7 +22,7 @@ io.on('connection', function(socket){
 	// Handle an 'add user' event
 	socket.on('add user', function(msg){
 		socket.username = msg.username;
-		usernames[msg.username] = msg.username;
+		usernames[msg.username] = socket.id;
 		userCount++;
 		// Tell the user they have successfully logged in
 		socket.emit('login', {
@@ -53,10 +54,20 @@ io.on('connection', function(socket){
 	});
 	// Handle a 'chat message' event
 	socket.on('chat message', function(msg){
+		 
 		socket.broadcast.emit('chat message', {
 			"username": socket.username,
 			"message": msg.message
-		});
+		});		
+	});
+	// Handle a 'private message' event
+	socket.on('private message', function(msg){
+		if(usernames[msg.to]){
+			io.to(usernames[msg.to]).emit('private message', {
+				"username": socket.username,
+				"message": msg.message
+			});
+		}
 	});
 	// Handle a 'disconnect' event
 	socket.on('disconnect', function(){
