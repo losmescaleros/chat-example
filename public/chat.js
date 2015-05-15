@@ -1,6 +1,8 @@
 /* global jQuery */
 /* global io */
 var chat = chat || {};
+var x;
+jQuery.fn.reverse = [].reverse;
 
 (function($, window, chat, undefined){
   var socket = io();
@@ -136,6 +138,13 @@ var chat = chat || {};
     $msgContainer.scrollTop($msgContainer.height());
   }; 
   
+  var prependMessage = function(username, message){
+    $messages.prepend($('<li>')
+      .addClass('')
+      .text(username + ": " + message));
+    $msgContainer.scrollTop($msgContainer.height());
+  };
+  
   var showPrivateMessage = function(username, message){
     $messages.append($('<li>')
       .addClass('text-warning')
@@ -206,6 +215,11 @@ var chat = chat || {};
   
   socket.on('login error', function(data){
     showLoginError(data.message);
+  });
+  
+  socket.on('chat history', function(data){
+    console.log(data);
+    prependMessage(data.username, data.message);
   });
   
 })(jQuery, window, chat);
